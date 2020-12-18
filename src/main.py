@@ -13,11 +13,12 @@ from UNIT import UNIT
 from dice_loss import DiceLoss
 #from chunk_image import load_data
 from crop_image import load_data
+from UNET import UNet
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-chunk_x = 50
-chunk_y = 50
+chunk_x = 32
+chunk_y = 32
 
 
 
@@ -44,19 +45,27 @@ def to_one_hot_2d(n):
 
     return result
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 def train_unit():
-    model = UNIT(image_size=50, patch_size=5, dim=30, depth=4, heads=10, mlp_dim=200, channels=4).to(device)
+    #model = UNIT(image_size=32, patch_size=4, dim=24, depth=4, heads=12, mlp_dim=400, channels=4).to(device)
+    model = UNet(4).to(device)
+    #params = count_parameters(model)
+    #print('ok')
+
     #, dropout=0.3, emb_dropout=0.3
     #criterion = nn.BCELoss()
     #criterion = DiceLoss()
-    #criterion = nn.CrossEntropyLoss()
-    criterion = DiceLoss()
+    criterion = nn.CrossEntropyLoss()
+    #criterion = DiceLoss()
 
     optimizer = optim.Adam(model.parameters())
     #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5)
     epoch = 0
     while epoch != 10000:
-
+        if(epoch == 500):
+            criterion = DiceLoss()
         batch_size = 5
         current_batch_index = (int(epoch/1) % 29)
         lower_index = (current_batch_index * batch_size) + 11
@@ -101,7 +110,7 @@ def train_unit():
 
             print('[%d] loss: %.3f' % (epoch + 1, running_loss))
 
-            if(epoch%20 == 2):
+            if(epoch%100 == 1):
                 evaluate(model, True)
                 model.train()
             elif(epoch % 10 == 2):
