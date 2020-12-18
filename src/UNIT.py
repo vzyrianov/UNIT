@@ -124,13 +124,10 @@ class UNIT(nn.Module):
 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim * (1 + num_patches)),
-            nn.Linear(dim * (1 + num_patches), mlp_dim),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(mlp_dim, (image_size * image_size)),
-            #nn.ReLU()
-            #nn.Softmax()
-            nn.Sigmoid()
+            nn.Linear(dim * (1 + num_patches), (image_size * image_size * 4)) #,mlp_dim),
+            #nn.GELU(),
+            #nn.Dropout(dropout),
+            #nn.Linear(mlp_dim, (image_size * image_size * 4))
         )
 
     def forward(self, img, mask=None):
@@ -148,60 +145,5 @@ class UNIT(nn.Module):
 
         x = self.transformer(x, mask)
 
-        #x = self.to_cls_token(x[:, 0])
         x = rearrange(x[:, :], 'b p d -> b (p d)')
-        return torch.reshape(self.mlp_head(x), (b, self.image_size, self.image_size))
-        #return x[:, 1:]
-#'''
-'''
-class UNIT(nn.Module):
-    #dim -> Embedding Dimension
-    #depth -> Number of Transformer Layers
-    #heads -> Heads
-    def __init__(self, *, image_size, image_size_x, image_size_y, patch_size, dim, depth, heads, mlp_dim, channels=3, dropout=0., emb_dropout=0.):
-        super().__init__()
-        assert image_size % patch_size == 0, 'Image dimensions must be divisible by the patch size.'
-        num_patches = ((image_size_x) // patch_size) ** 2
-        patch_dim = channels * patch_size ** 2
-        assert num_patches > MIN_NUM_PATCHES, f'your number of patches ({num_patches}) is way too small for attention to be effective (at least 16). Try decreasing your patch size'
-        self.image_size = image_size
-        self.patch_size = patch_size
-
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        self.patch_to_embedding = nn.Linear(patch_dim, dim)
-        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
-        self.dropout = nn.Dropout(emb_dropout)
-
-        self.transformer = Transformer(dim, depth, heads, mlp_dim, dropout)
-
-        self.to_cls_token = nn.Identity()
-
-        self.mlp_head = nn.Sequential(
-            nn.LayerNorm(dim * (1 + num_patches)),
-            nn.Linear(dim * (1 + num_patches), mlp_dim),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(mlp_dim, (2 * image_size * image_size)),
-            nn.ReLU()
-        )
-
-    def forward(self, img, mask=None):
-        p = self.patch_size
-        b = img.shape[0]
-        x = rearrange(
-            img, 'b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=p, p2=p)
-        x = self.patch_to_embedding(x)
-        b, n, _ = x.shape
-
-        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)
-        x = torch.cat((cls_tokens, x), dim=1)
-        x += self.pos_embedding[:, :(n + 1)]
-        x = self.dropout(x)
-
-        x = self.transformer(x, mask)
-
-        #x = self.to_cls_token(x[:, 0])
-        x = rearrange(x[:, :], 'b p d -> b (p d)')
-        return torch.reshape(self.mlp_head(x), (b, 2, self.image_size, self.image_size))
-        #return x[:, 1:]
-'''
+        return torch.reshape(self.mlp_head(x), (b, 4, self.image_size, self.image_size))
