@@ -20,39 +20,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 chunk_x = 32
 chunk_y = 32
 
-
-
-
-def dice_loss(pred, target, smooth = 1.):
-    pred = pred.contiguous()
-    target = target.contiguous()    
-
-    intersection = (pred * target).sum(dim=2).sum(dim=2)
-    
-    loss = (1 - ((2. * intersection + smooth) / (pred.sum(dim=2).sum(dim=2) + target.sum(dim=2).sum(dim=2) + smooth)))
-    
-    return loss.mean()
-
-# 0 goes to [1, 0], 1 goes to [0, 1]
-def to_one_hot_2d(n):
-    result = np.array((2,))
-    if n == 0.0:
-        result = np.array([1, 0])
-    else:
-        result = np.array([0, 1])
-
-    result = torch.from_numpy(result)
-
-    return result
-
+#Function acquired from stack overflow
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def train_unit():
-    #model = UNIT(image_size=32, patch_size=4, dim=24, depth=4, heads=12, mlp_dim=400, channels=4).to(device)
-    model = UNet(4).to(device)
-    #params = count_parameters(model)
-    #print('ok')
+    model = UNIT(image_size=32, patch_size=4, dim=24, depth=4, heads=12, mlp_dim=400, channels=4).to(device)
+    #model = UNet(4).to(device)
+    parameter_count = count_parameters(model)
+    print('model parameter count: ' + str(parameter_count))
 
     #, dropout=0.3, emb_dropout=0.3
     #criterion = nn.BCELoss()
