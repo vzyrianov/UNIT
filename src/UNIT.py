@@ -146,4 +146,5 @@ class UNIT(nn.Module):
         x = self.transformer(x, mask)
 
         x = rearrange(x[:, :], 'b p d -> b (p d)')
-        return torch.reshape(self.mlp_head(x), (b, 4, self.image_size, self.image_size))
+        x = torch.reshape(self.mlp_head(x), (b, 4, self.image_size, self.image_size))
+        return x

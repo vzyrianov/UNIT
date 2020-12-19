@@ -20,7 +20,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 chunk_x = 32
 chunk_y = 32
 
-#Function acquired from stack overflow
+#This function acquired from stack overflow
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -30,14 +30,10 @@ def train_unit():
     parameter_count = count_parameters(model)
     print('model parameter count: ' + str(parameter_count))
 
-    #, dropout=0.3, emb_dropout=0.3
-    #criterion = nn.BCELoss()
-    #criterion = DiceLoss()
     criterion = nn.CrossEntropyLoss()
     #criterion = DiceLoss()
 
     optimizer = optim.Adam(model.parameters())
-    #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5)
     epoch = 0
     while epoch != 10000:
         if(epoch == 500):
@@ -53,7 +49,6 @@ def train_unit():
         chunked_images, chunked_segmented_images = load_data(lower_index, upper_index, chunk_x, chunk_y)
 
         for batch_epoch in range(0, 1):
-            optimizer.zero_grad()
 
             running_loss = 0.0
         
@@ -77,6 +72,7 @@ def train_unit():
 
             outputs = model(model_input)
             
+            optimizer.zero_grad()
             loss = criterion(outputs, model_output)
             loss.backward()
             optimizer.step()
@@ -86,10 +82,10 @@ def train_unit():
 
             print('[%d] loss: %.3f' % (epoch + 1, running_loss))
 
-            if(epoch%100 == 1):
+            if (epoch%300 == 1):
                 evaluate(model, True)
                 model.train()
-            elif(epoch % 10 == 2):
+            elif(epoch % 100 == 2):
                 evaluate(model, False)
                 model.train()
             
@@ -129,6 +125,7 @@ def evaluate(model, show_it):
 
     #criterion = nn.MSELoss()
     criterion = nn.CrossEntropyLoss()
+    #criterion = DiceLoss()
     loss = criterion(outputs, model_output)
     loss_amount = loss.item()
     test_losses.append(loss_amount)
