@@ -124,7 +124,8 @@ class UNIT(nn.Module):
 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim * (1 + num_patches)),
-            nn.Linear(dim * (1 + num_patches), (image_size * image_size * 4)) #,mlp_dim),
+            nn.Linear(dim * (1 + num_patches), (image_size * image_size * 4))#, #,mlp_dim),
+            #nn.Softmax()
             #nn.GELU(),
             #nn.Dropout(dropout),
             #nn.Linear(mlp_dim, (image_size * image_size * 4))

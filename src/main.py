@@ -20,6 +20,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 chunk_x = 32
 chunk_y = 32
 
+def dice_coef(y_true, y_pred, smooth=1.0):
+    y_true_f = torch.flatten(y_true)
+    y_pred_f = torch.flatten(y_pred)
+    intersection = torch.sum(y_true_f * y_pred_f)
+    result = (2. * intersection + smooth) / (torch.sum(y_true_f) + torch.sum(y_pred_f) + smooth)
+    return result
+
 #This function acquired from stack overflow
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -82,10 +89,10 @@ def train_unit():
 
             print('[%d] loss: %.3f' % (epoch + 1, running_loss))
 
-            if (epoch%300 == 1):
+            if (epoch%50 == 1):
                 evaluate(model, True)
                 model.train()
-            elif(epoch % 100 == 2):
+            elif(epoch % 30 == 2):
                 evaluate(model, False)
                 model.train()
             
@@ -130,6 +137,18 @@ def evaluate(model, show_it):
     loss_amount = loss.item()
     test_losses.append(loss_amount)
     print('----------------------Test Loss: ' + str(loss_amount))
+
+    dice_var1 = torch.argmax(outputs, axis=1)
+    dice_var1 = F.one_hot(dice_var1, num_classes=4).float()
+    dice_var1 = torch.transpose(dice_var1, 1, 3)
+
+    dice_var2 = F.one_hot(model_output, num_classes=4).float()
+    dice_var2 = torch.transpose(dice_var2, 1, 3)
+
+    print('----------------------Dice Loss 0: ' + str(dice_coef(dice_var1[:,0,:,:], dice_var2[:,0,:,:])))
+    print('----------------------Dice Loss 1: ' + str(dice_coef(dice_var1[:,1,:,:], dice_var2[:,1,:,:])))
+    print('----------------------Dice Loss 2: ' + str(dice_coef(dice_var1[:,2,:,:], dice_var2[:,2,:,:])))
+    print('----------------------Dice Loss 3: ' + str(dice_coef(dice_var1[:,3,:,:], dice_var2[:,3,:,:])))
 
     #show_it = True
     if show_it:
