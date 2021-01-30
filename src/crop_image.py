@@ -9,6 +9,7 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 def load_data(range_min, range_max, chunk_x, chunk_y):
     chunked_images_arr = []
@@ -35,8 +36,8 @@ def load_data(range_min, range_max, chunk_x, chunk_y):
         for j in range(0, data.shape[2]):
             
             #Offset to make x by y image centered
-            x_offset = int((data.shape[0] - chunk_x) / 2)
-            y_offset = int((data.shape[1] - chunk_y) / 2)
+            x_offset = int((data.shape[0] - chunk_x) / 2) + random.randrange(-15, 15)
+            y_offset = int((data.shape[1] - chunk_y) / 2) + random.randrange(-15, 15)
  
             chunked_image           =      data[(x_offset):(x_offset+chunk_x), (y_offset):(y_offset+chunk_y), j]
             chunked_segmented_image = segmented[(x_offset):(x_offset+chunk_x), (y_offset):(y_offset+chunk_y), j]
@@ -56,10 +57,10 @@ def load_data(range_min, range_max, chunk_x, chunk_y):
                 chunked_images_arr = chunked_images_arr + [chunked_image]
                 chunked_segmented_images_arr = chunked_segmented_images_arr + [chunked_segmented_image]
 
-        print('loaded file' + data_filename)
+        #print('loaded file' + data_filename)
     
  
-    print("copying from list to array")
+    #print("copying from list to array")
     chunked_images = np.zeros((len(chunked_images_arr), chunk_x, chunk_y, 4), dtype=np.float32)
     chunked_segmented_images = np.zeros((len(chunked_images_arr), chunk_x, chunk_y), dtype=np.float32)
 
@@ -67,6 +68,6 @@ def load_data(range_min, range_max, chunk_x, chunk_y):
         chunked_images[i] = chunked_images_arr[i]
         chunked_segmented_images[i] = chunked_segmented_images_arr[i]
 
-    print('finished copying')
+    #print('finished copying')
     
     return (chunked_images, chunked_segmented_images)
