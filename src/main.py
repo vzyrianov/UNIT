@@ -17,8 +17,9 @@ from UNET import UNet
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-chunk_x = 80
-chunk_y = 80
+chunk_x = 155
+chunk_y = 240
+chunk_z = 240
 
 def dice_coef(y_true, y_pred, smooth=1.0):
     y_true_f = torch.flatten(y_true)
@@ -32,9 +33,7 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def train_unit():
-    #model = SeTr(image_size=50, patch_size=10, dim=32, depth=4, heads=8, mlp_dim=400, channels=4).to(device)
     model = UNIT().to(device)
-    #model = UNet(4).to(device)
     parameter_count = count_parameters(model)
     print('model parameter count: ' + str(parameter_count))
 
@@ -47,8 +46,6 @@ def train_unit():
 
     epoch = 0
     while epoch != 10000:
-        #if(epoch == 500):
-        #    criterion = DiceLoss()
         batch_size = 2
         current_batch_index = (int(epoch/1) % (int(340/batch_size)))
         lower_index = (current_batch_index * batch_size) + 11
@@ -68,61 +65,54 @@ def train_unit():
         #print('upper_index:' + str(upper_index))
         chunked_images, chunked_segmented_images = load_data(lower_index, upper_index, chunk_x, chunk_y)
 
-        for batch_epoch in range(0, 1):
-
-            running_loss = 0.0
-        
-
-            total_size = chunked_images.shape[0]
-            subbatch_size = int(total_size / 1)
-            current_subbatch_index = 0#epoch % 1
+        running_loss = 0.0
         
  
-            model_input = np.copy(chunked_images[current_subbatch_index*subbatch_size:((1 + current_subbatch_index)*subbatch_size)])
-            model_output = chunked_segmented_images[current_subbatch_index*subbatch_size:((1 + current_subbatch_index)*subbatch_size)]
-        
-            model_input= np.copy(chunked_images)
-            model_output = np.copy(chunked_segmented_images)
+        model_input = np.copy(chunked_images[current_subbatch_index*subbatch_size:((1 + current_subbatch_index)*subbatch_size)])
+        model_output = chunked_segmented_images[current_subbatch_index*subbatch_size:((1 + current_subbatch_index)*subbatch_size)]
+      
+        model_input= np.copy(chunked_images)
+        model_output = np.copy(chunked_segmented_images)
 
-            model_input = model_input.transpose((0, 3, 1, 2))
-            model_input = torch.from_numpy(model_input).to(device)
+        model_input = model_input.transpose((0, 3, 1, 2))
+        model_input = torch.from_numpy(model_input).to(device)
 
-            model_output = model_output.transpose((0, 1, 2))
-            model_output = torch.LongTensor(model_output).to(device)
+        model_output = model_output.transpose((0, 1, 2))
+        model_output = torch.LongTensor(model_output).to(device)
 
-            outputs = model(model_input)
+        outputs = model(model_input)
             
-            optimizer.zero_grad()
-            loss = criterion(outputs, model_output)
-            loss.backward()
-            optimizer.step()
-            scheduler.step(loss)
+        optimizer.zero_grad()
+        loss = criterion(outputs, model_output)
+        loss.backward()
+        optimizer.step()
+        scheduler.step(loss)
 
-            running_loss += loss.item()
+        running_loss += loss.item()
 
-            print('[%d] loss: %.3f' % (epoch + 1, running_loss))
+        print('[%d] loss: %.3f' % (epoch + 1, running_loss))
 
-            if (epoch%500 == 3):
-                evaluate(model, True)
-                model.train()
-            elif(epoch % 30 == 2):
-                evaluate(model, False)
-                model.train()
-            elif (epoch%500 == 4):
-                evaluate_train(model, True)
-                model.train()
-            elif (epoch%30 == 5):
-                evaluate_train(model, False)
-                model.train()
+        if (epoch%500 == 3):
+            evaluate(model, True)
+            model.train()
+        elif(epoch % 30 == 2):
+            evaluate(model, False)
+            model.train()
+        elif (epoch%500 == 4):
+            evaluate_train(model, True)
+            model.train()
+        elif (epoch%30 == 5):
+            evaluate_train(model, False)
+            model.train()
 
             
-            epoch = epoch + 1 
+        epoch = epoch + 1 
 
-            del model_input
-            del model_output
-            del outputs
-            del loss
-            torch.cuda.empty_cache()
+        del model_input
+        del model_output
+        del outputs
+        del loss
+        torch.cuda.empty_cache()
         
         del chunked_images
         del chunked_segmented_images
